@@ -4,7 +4,6 @@ int gcd (int u, int v)
     /* u-u/v*v == u mod v */
     //test commentlddnfasdhfa sdfsadjhbf alskdjh78y sadfbasldk17123123 123 1231j2b31hj23g1jk
     /
-    1231dfsa
 void main(void)
 {   int x; int y;
     4x = input(); y = input();
