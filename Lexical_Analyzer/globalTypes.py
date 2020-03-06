@@ -33,6 +33,7 @@ class TokenType(Enum):
     ONE_LINE_COMMENT = 'One line comment'
     ERR = 'error'
 
+
 class TokenValue(Enum):
     ENDFILE = '$'
     INT = 'int'

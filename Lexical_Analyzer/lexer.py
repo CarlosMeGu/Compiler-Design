@@ -5,6 +5,10 @@ programa = ''
 posicion = ''
 progLong = ''
 
+currentLineContent = ''
+linePos = 0
+lineNumber = 0
+
 READING = 1
 IN_ONE_COMMENT = 2
 IN_MULTI_COMMENT = 2
@@ -33,6 +37,8 @@ def getToken(imprime=True):
     global current
     global READING
     global IN_COMMENT
+    global linePos
+    global lineNumber
     intPattern = re.compile('^([0-9]+)+$')
     idPattern = re.compile('^([A-Za-z_][A-Za-z0-9_]*)+$')
     specialPattern = re.compile('[@_!#$%^&*()<,;>?/\|\-}{~:]')
@@ -41,22 +47,30 @@ def getToken(imprime=True):
     tokenString = programa[actualPosicion]
     token = ''
     while not stop:
+        linePos += 1
         if programa[actualPosicion] == '$' or programa[actualPosicion] == ' ' or programa[actualPosicion] == '\n':
             stop = True
+
             if programa[actualPosicion] == '$':
                 token = TokenType.ENDFILE
             elif programa[actualPosicion] == '\n' and current == IN_ONE_COMMENT:
                 current = READING
-
             else:
                 actualPosicion += 1
-                tokenString = tokenString[:-1]
-                if idPattern.match(tokenString):
+                tokenString2 = tokenString[:-1]
+                if tokenString == '@':
+                    print('Hey')
+                if idPattern.match(tokenString2):
                     token = TokenType.ID.value
-                elif intPattern.match(tokenString):
+                elif intPattern.match(tokenString2):
                     token = TokenType.INT.value
                 else:
                     token = TokenType.ERR.value
+
+
+            if '\n' in tokenString:
+                linePos = 0
+                lineNumber += 1
 
         else:
             if tokenString == TokenValue.INT.value:
@@ -134,6 +148,9 @@ def getToken(imprime=True):
                 elif intPattern.match(tokenString):
                     token = TokenType.ID.value
                     actualPosicion -= 1
+                else:
+                    token = TokenType.ERR.value
+                    tokenString += programa[actualPosicion]
 
 
             actualPosicion += 1
@@ -143,9 +160,19 @@ def getToken(imprime=True):
                 tokenString += programa[actualPosicion]
 
 
+
     if current == READING or token == TokenType.OPEN_MULTI_LINE_COMMENT.value or token == TokenType.ONE_LINE_COMMENT.value:
-        if imprime and not tokenString == ' ' and not tokenString == '\n' and not tokenString == '' and not token == '':
+        if imprime == True and not tokenString == ' ' and not tokenString == '\n' and not tokenString == '' and not token == '':
             print(token, " = ", tokenString)
+
+    if token == TokenType.ERR.value and not tokenString == ' ' and not tokenString == '\n' and not tokenString == '':
+        print('Error en la linea', lineNumber, 'posicion', linePos - len(tokenString))
+        programLines = programa.split('\n')
+        print (programLines[lineNumber-1])
+        for x in range(linePos - len(tokenString) ):
+            print(' ', end = '')
+        print('^')
+
     globales(programa, actualPosicion, progLong)
 
     return token, tokenString
