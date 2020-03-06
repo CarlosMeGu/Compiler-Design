@@ -30,6 +30,7 @@ class TokenType(Enum):
     RETURN = 'return'
     OPEN_MULTI_LINE_COMMENT = 'Open multi line comment'
     CLOSE_MULTI_LINE_COMMENT = 'Close multi line comment'
+    ONE_LINE_COMMENT = 'One line comment'
     ERR = 'error'
 
 class TokenValue(Enum):

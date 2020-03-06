@@ -1,6 +1,14 @@
 from globalTypes import *
 import re
 
+programa = ''
+posicion = ''
+progLong = ''
+
+READING = 1
+IN_ONE_COMMENT = 2
+IN_MULTI_COMMENT = 2
+current = READING
 
 def globales(prog, pos, long):
     global programa
@@ -10,8 +18,21 @@ def globales(prog, pos, long):
     posicion = pos
     progLong = long
 
+def states(state):
+    global current
+    global READING
+    global IN_COMMENT
+
+    READING = 1
+    IN_ONE_COMMENT = 2
+    IN_MULIT_COMMENT = 2
+    current = READING
+
 
 def getToken(imprime=True):
+    global current
+    global READING
+    global IN_COMMENT
     intPattern = re.compile('^([0-9]+)+$')
     idPattern = re.compile('^([A-Za-z_][A-Za-z0-9_]*)+$')
     specialPattern = re.compile('[@_!#$%^&*()<,;>?/\|\-}{~:]')
@@ -23,8 +44,12 @@ def getToken(imprime=True):
         if programa[actualPosicion] == '$' or programa[actualPosicion] == ' ' or programa[actualPosicion] == '\n':
             stop = True
             if programa[actualPosicion] == '$':
-                token = TokenType.ENDFILE.value
+                token = TokenType.ENDFILE
+            elif programa[actualPosicion] == '\n' and current == IN_ONE_COMMENT:
+                current = READING
+
             else:
+                actualPosicion += 1
                 tokenString = tokenString[:-1]
                 if idPattern.match(tokenString):
                     token = TokenType.ID.value
@@ -32,7 +57,7 @@ def getToken(imprime=True):
                     token = TokenType.INT.value
                 else:
                     token = TokenType.ERR.value
-            actualPosicion += 1
+
         else:
             if tokenString == TokenValue.INT.value:
                 token = TokenType.INT.value
@@ -75,13 +100,33 @@ def getToken(imprime=True):
             elif tokenString == TokenValue.MINUS.value:
                 token = TokenType.MINUS.value
             elif tokenString == TokenValue.TIMES.value:
-                token = TokenType.TIMES.value
+                tokenString2 = tokenString + programa[actualPosicion+1]
+                if tokenString2 == TokenValue.CLOSE_MULTI_LINE_COMMENT.value:
+                    token = TokenType.CLOSE_MULTI_LINE_COMMENT.value
+                    current = READING
+                    tokenString = tokenString2
+                    actualPosicion += 1
+                    states(1)
+                else:
+                    token = TokenType.TIMES.value
+
             elif tokenString == TokenValue.DIV.value:
-                token = TokenType.DIV.value
+                tokenString2 = tokenString + programa[actualPosicion+1]
+                if tokenString2 == TokenValue.OPEN_MULTI_LINE_COMMENT.value:
+                    token = TokenType.OPEN_MULTI_LINE_COMMENT.value
+                    tokenString = tokenString2
+                    actualPosicion += 1
+                    current = IN_MULTI_COMMENT
+                elif tokenString2 == TokenValue.ONE_LINE_COMMENT.value:
+                    token = TokenType.ONE_LINE_COMMENT.value
+                    current = IN_ONE_COMMENT
+                    tokenString = tokenString2
+                    actualPosicion += 1
+                else:
+                    token = TokenType.DIV.value
             elif tokenString == TokenValue.INT_NUM.value:
                 token = TokenType.INT_NUM.value
             elif specialPattern.search(tokenString):
-                #print('Encontre un caracter especial en: ', tokenString)
                 tokenString = tokenString[:-1]
                 if idPattern.match(tokenString):
                     token = TokenType.ID.value
@@ -91,16 +136,16 @@ def getToken(imprime=True):
                     actualPosicion -= 1
 
 
-
             actualPosicion += 1
             if token != '':
                 stop = True
             else:
                 tokenString += programa[actualPosicion]
 
-    if imprime and not tokenString == ' ' and not tokenString == '\n' and not tokenString == '':
-        print(token, " = ", tokenString )
 
+    if current == READING or token == TokenType.OPEN_MULTI_LINE_COMMENT.value or token == TokenType.ONE_LINE_COMMENT.value:
+        if imprime and not tokenString == ' ' and not tokenString == '\n' and not tokenString == '' and not token == '':
+            print(token, " = ", tokenString)
     globales(programa, actualPosicion, progLong)
 
     return token, tokenString
